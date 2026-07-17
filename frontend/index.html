@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Tracker Kanban Board</title>
+  <style>
+    :root { --bg:#f5f7fb; --surface:#fff; --muted-surface:#f0f3f8; --border:#d8dee9; --text:#172033; --muted:#667085; --accent:#7c2d12; --accent-soft:#fff1e8; --danger:#b42318; --danger-soft:#fff0ed; --success-soft:#ecfdf3; --shadow:0 10px 30px rgba(15,23,42,.08); --radius:16px; --radius-sm:10px; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg); color:var(--text); }
+    button,input,textarea,select { font:inherit; }
+    button { cursor:pointer; }
+    .page { max-width:1280px; margin:0 auto; padding:32px 20px 48px; }
+    .app-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:22px; }
+    .eyebrow { margin:0 0 8px; color:var(--accent); font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+    h1 { margin:0; font-size:clamp(2rem,4vw,3rem); letter-spacing:-.04em; }
+    .subtitle { max-width:720px; margin:10px 0 0; color:var(--muted); line-height:1.6; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .btn { border:1px solid var(--border); border-radius:999px; padding:10px 16px; background:var(--surface); color:var(--text); font-weight:700; transition:transform .15s ease,border-color .15s ease,background .15s ease; }
+    .btn:hover { transform:translateY(-1px); border-color:#b8c1d1; }
+    .btn-primary { border-color:var(--accent); background:var(--accent); color:#fff; }
+    .btn-danger { border-color:var(--danger); color:var(--danger); background:var(--danger-soft); }
+    .state-banner { display:none; margin:0 0 18px; padding:14px 16px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--surface); color:var(--muted); line-height:1.5; }
+    .state-banner.visible { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .state-banner.error { border-color:#fecdca; background:var(--danger-soft); color:var(--danger); }
+    .state-banner.success { border-color:#abefc6; background:var(--success-soft); color:#067647; }
+    .filters { display:grid; grid-template-columns:2fr 1fr 1fr auto auto; gap:10px; margin-bottom:18px; padding:14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); }
+    .filters input,.filters select { min-width:0; border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:#fff; }
+    .check-filter { display:flex; align-items:center; gap:7px; padding:0 6px; white-space:nowrap; color:var(--muted); font-weight:700; }
+    .overdue { background:var(--danger-soft); border-color:#fecdca; color:var(--danger); }
+    .board { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; align-items:start; }
+    .column { min-height:520px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    .column.drag-over { outline:3px solid rgba(124,45,18,.22); outline-offset:4px; }
+    .column-header { display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid var(--border); background:var(--muted-surface); }
+    .column-title { margin:0; font-size:1rem; }
+    .count { display:inline-flex; align-items:center; justify-content:center; min-width:30px; height:30px; padding:0 8px; border-radius:999px; background:var(--surface); border:1px solid var(--border); color:var(--muted); font-weight:700; font-size:.85rem; }
+    .card-list { min-height:440px; padding:14px; display:flex; flex-direction:column; gap:12px; }
+    .empty-column { border:1px dashed #c8d0dd; border-radius:var(--radius-sm); padding:20px 14px; color:var(--muted); text-align:center; background:#fbfcfe; line-height:1.5; }
+    .task-card { border:1px solid var(--border); border-radius:14px; background:var(--surface); padding:14px; box-shadow:0 6px 16px rgba(15,23,42,.05); }
+    .task-card[draggable="true"] { cursor:grab; }
+    .task-card.dragging { opacity:.55; cursor:grabbing; }
+    .task-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
+    .task-title { margin:0; font-size:1rem; line-height:1.35; }
+    .task-description { margin:8px 0 12px; color:var(--muted); line-height:1.45; white-space:pre-wrap; }
+    .task-meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+    .badge { display:inline-flex; align-items:center; border-radius:999px; border:1px solid var(--border); background:var(--muted-surface); padding:5px 9px; font-size:.78rem; font-weight:700; color:var(--muted); }
+    .priority-high { background:#fff1f3; border-color:#fecdd6; color:#c01048; }
+    .priority-medium { background:var(--accent-soft); border-color:#fed7aa; color:var(--accent); }
+    .priority-low { background:#eff8ff; border-color:#b2ddff; color:#175cd3; }
+    .edit-btn { border:1px solid var(--border); background:#fff; color:var(--text); border-radius:999px; padding:6px 10px; font-size:.82rem; font-weight:700; white-space:nowrap; }
+    .modal-overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(15,23,42,.52); z-index:10; }
+    .modal-overlay.visible { display:flex; }
+    .modal { width:min(620px,100%); max-height:92vh; overflow:auto; background:var(--surface); border-radius:var(--radius); box-shadow:0 24px 70px rgba(15,23,42,.25); border:1px solid var(--border); }
+    .modal-header { display:flex; justify-content:space-between; gap:16px; padding:18px 20px; border-bottom:1px solid var(--border); }
+    .modal-title { margin:0; font-size:1.25rem; }
+    .modal-body { padding:20px; }
+    .form-grid { display:grid; gap:14px; }
+    .form-row { display:grid; gap:7px; }
+    .form-row label { font-weight:700; font-size:.9rem; }
+    .form-row input,.form-row textarea,.form-row select { width:100%; border:1px solid var(--border); border-radius:12px; padding:11px 12px; background:#fff; color:var(--text); }
+    .form-row textarea { min-height:92px; resize:vertical; }
+    .two-col { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .form-error { display:none; padding:12px; border-radius:var(--radius-sm); background:var(--danger-soft); color:var(--danger); border:1px solid #fecdca; line-height:1.45; }
+    .form-error.visible { display:block; }
+    .modal-footer { display:flex; justify-content:space-between; gap:10px; padding:18px 20px; border-top:1px solid var(--border); background:#fbfcfe; }
+    .footer-left,.footer-right { display:flex; gap:10px; flex-wrap:wrap; }
+    @media (max-width:900px) { .board{grid-template-columns:1fr}.app-header{flex-direction:column}.actions{justify-content:flex-start}.column{min-height:auto}.card-list{min-height:220px}.filters{grid-template-columns:1fr 1fr} }
+    @media (max-width:560px) { .two-col{grid-template-columns:1fr}.modal-footer{flex-direction:column}.footer-left,.footer-right{width:100%}.btn{width:100%} }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Module 3 frontend</p>
+        <h1>Task Tracker Kanban</h1>
+        <p class="subtitle">A vanilla HTML/CSS/JavaScript Kanban board connected to the FastAPI Task Tracker backend. Tasks are grouped by status, sorted by priority, and updated through the API.</p>
+      </div>
+      <div class="actions"><button class="btn" id="refreshButton" type="button">Refresh</button><button class="btn btn-primary" id="newTaskButton" type="button">New Task</button></div>
+    </header>
+    <section class="state-banner" id="stateBanner" aria-live="polite"></section>
+    <section class="filters" aria-label="Task filters">
+      <input id="searchInput" type="search" placeholder="Search title or description" aria-label="Search tasks" />
+      <select id="filterPriority" aria-label="Filter by priority"><option value="">All priorities</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select>
+      <input id="filterAssignee" type="text" placeholder="Assignee" aria-label="Filter by assignee" />
+      <label class="check-filter"><input id="filterOverdue" type="checkbox" /> Overdue only</label>
+      <button class="btn" id="clearFiltersButton" type="button">Clear</button>
+    </section>
+    <section class="board" id="board" aria-label="Task board">
+      <article class="column" data-status="ToDo"><header class="column-header"><h2 class="column-title">To Do</h2><span class="count" id="count-ToDo">0</span></header><div class="card-list" data-list-status="ToDo"></div></article>
+      <article class="column" data-status="InProgress"><header class="column-header"><h2 class="column-title">In Progress</h2><span class="count" id="count-InProgress">0</span></header><div class="card-list" data-list-status="InProgress"></div></article>
+      <article class="column" data-status="Done"><header class="column-header"><h2 class="column-title">Done</h2><span class="count" id="count-Done">0</span></header><div class="card-list" data-list-status="Done"></div></article>
+    </section>
+  </main>
+  <div class="modal-overlay" id="taskModalOverlay" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+    <section class="modal">
+      <header class="modal-header"><h2 class="modal-title" id="taskModalTitle">New Task</h2><button class="btn" id="modalCloseButton" type="button" aria-label="Close modal">Close</button></header>
+      <form id="taskForm">
+        <div class="modal-body"><div class="form-grid"><div class="form-error" id="formError" role="alert"></div><input type="hidden" id="taskId" />
+          <div class="form-row"><label for="titleInput">Title</label><input id="titleInput" name="title" type="text" maxlength="200" autocomplete="off" required /></div>
+          <div class="form-row"><label for="descriptionInput">Description</label><textarea id="descriptionInput" name="description"></textarea></div>
+          <div class="two-col form-grid"><div class="form-row"><label for="statusInput">Status</label><select id="statusInput" name="status"><option value="ToDo">To Do</option><option value="InProgress">In Progress</option><option value="Done">Done</option></select></div>
+          <div class="form-row"><label for="priorityInput">Priority</label><select id="priorityInput" name="priority"><option value="Low">Low</option><option value="Medium" selected>Medium</option><option value="High">High</option></select></div></div>
+          <div class="form-row"><label for="assigneeInput">Assignee</label><input id="assigneeInput" name="assignee" type="text" autocomplete="off" placeholder="Optional" /></div>
+          <div class="form-row"><label for="dueDateInput">Due date</label><input id="dueDateInput" name="due_date" type="date" /></div>
+        </div></div>
+        <footer class="modal-footer"><div class="footer-left"><button class="btn btn-danger" id="deleteButton" type="button">Delete</button></div><div class="footer-right"><button class="btn" id="cancelButton" type="button">Cancel</button><button class="btn btn-primary" id="saveButton" type="submit">Save Task</button></div></footer>
+      </form>
+    </section>
+  </div>
+  <script>
+    const API_BASE_URL = "http://localhost:8000";
+    const STATUSES = ["ToDo", "InProgress", "Done"];
+    const STATUS_LABELS = { ToDo: "To Do", InProgress: "In Progress", Done: "Done" };
+    const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
+    let tasks = [];
+    let currentMode = "create";
+    let editingSnapshot = null;
+    const stateBanner = document.getElementById("stateBanner");
+    const refreshButton = document.getElementById("refreshButton");
+    const newTaskButton = document.getElementById("newTaskButton");
+    const modalOverlay = document.getElementById("taskModalOverlay");
+    const modalTitle = document.getElementById("taskModalTitle");
+    const modalCloseButton = document.getElementById("modalCloseButton");
+    const cancelButton = document.getElementById("cancelButton");
+    const taskForm = document.getElementById("taskForm");
+    const formError = document.getElementById("formError");
+    const deleteButton = document.getElementById("deleteButton");
+    const taskIdInput = document.getElementById("taskId");
+    const titleInput = document.getElementById("titleInput");
+    const descriptionInput = document.getElementById("descriptionInput");
+    const statusInput = document.getElementById("statusInput");
+    const priorityInput = document.getElementById("priorityInput");
+    const assigneeInput = document.getElementById("assigneeInput");
+    const dueDateInput = document.getElementById("dueDateInput");
+    const searchInput = document.getElementById("searchInput");
+    const filterPriority = document.getElementById("filterPriority");
+    const filterAssignee = document.getElementById("filterAssignee");
+    const filterOverdue = document.getElementById("filterOverdue");
+    const clearFiltersButton = document.getElementById("clearFiltersButton");
+    function showBanner(message, type = "info", showRetry = false) { stateBanner.textContent = ""; stateBanner.className = `state-banner visible ${type === "error" ? "error" : ""} ${type === "success" ? "success" : ""}`; const text = document.createElement("span"); text.textContent = message; stateBanner.appendChild(text); if (showRetry) { const retry = document.createElement("button"); retry.type = "button"; retry.className = "btn"; retry.textContent = "Retry"; retry.addEventListener("click", loadTasks); stateBanner.appendChild(retry); } }
+    function hideBanner() { stateBanner.className = "state-banner"; stateBanner.textContent = ""; }
+    function showFormError(message) { formError.textContent = message; formError.classList.add("visible"); }
+    function clearFormError() { formError.textContent = ""; formError.classList.remove("visible"); }
+    function formatApiError(data, fallback) { if (!data) return fallback; if (typeof data.detail === "string") return data.detail; if (Array.isArray(data.detail)) return data.detail.map((item) => { const location = Array.isArray(item.loc) ? item.loc.filter((part) => part !== "body").join(".") : ""; return `${location ? `${location}: ` : ""}${item.msg || "Invalid value"}`; }).join(" "); if (typeof data === "object") return JSON.stringify(data); return fallback; }
+    function connectionErrorMessage(error) { if (error?.name === "AbortError") return `The API at ${API_BASE_URL} did not respond in time.`; const originAdvice = window.location.protocol === "file:" ? " This page is opened with file://, so FastAPI must allow the null origin; serving the frontend through a local HTTP server is recommended." : ` Ensure FastAPI allows the origin ${window.location.origin}.`; return `Cannot reach the Task Tracker API at ${API_BASE_URL}. Start the FastAPI server on port 8000 and check its CORS settings.${originAdvice}`; }
+    async function requestJson(path, options = {}, expectedStatuses = null) { const controller = new AbortController(); const timeout = window.setTimeout(() => controller.abort(), 10000); try { const response = await fetch(`${API_BASE_URL}${path}`, { ...options, signal: controller.signal, headers: { Accept: "application/json", ...(options.headers || {}) } }); let data = null; const contentType = response.headers.get("content-type") || ""; if (contentType.includes("application/json")) { try { data = await response.json(); } catch { data = null; } } const accepted = expectedStatuses ? expectedStatuses.includes(response.status) : response.ok; if (!accepted) throw new Error(formatApiError(data, `Request failed with HTTP ${response.status}`)); return data; } catch (error) { if (error instanceof TypeError || error?.name === "AbortError") throw new Error(connectionErrorMessage(error)); throw error; } finally { window.clearTimeout(timeout); } }
+    async function fetchTasks() { const params = new URLSearchParams(); if (searchInput.value.trim()) params.set("search", searchInput.value.trim()); if (filterPriority.value) params.set("priority", filterPriority.value); if (filterAssignee.value.trim()) params.set("assignee", filterAssignee.value.trim()); if (filterOverdue.checked) params.set("overdue", "true"); const query = params.toString(); return requestJson(`/tasks${query ? `?${query}` : ""}`); }
+    function sortTasks(list) { return [...list].sort((a, b) => { const diff = (PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99); if (diff !== 0) return diff; return String(a.id).localeCompare(String(b.id), undefined, { numeric: true }); }); }
+    function setColumnCount(status, count) { const counter = document.getElementById(`count-${status}`); if (counter) counter.textContent = String(count); }
+    function buildTaskCard(task) { const card = document.createElement("article"); card.className = "task-card"; card.draggable = true; card.dataset.taskId = task.id; card.dataset.status = task.status; const top = document.createElement("div"); top.className = "task-card-top"; const title = document.createElement("h3"); title.className = "task-title"; title.textContent = task.title; const editButton = document.createElement("button"); editButton.className = "edit-btn"; editButton.type = "button"; editButton.textContent = "Edit"; editButton.addEventListener("click", () => openEditModal(task)); top.append(title, editButton); card.appendChild(top); if (task.description) { const description = document.createElement("p"); description.className = "task-description"; description.textContent = task.description; card.appendChild(description); } const meta = document.createElement("div"); meta.className = "task-meta"; const priority = document.createElement("span"); priority.className = `badge priority-${String(task.priority).toLowerCase()}`; priority.textContent = task.priority; const assignee = document.createElement("span"); assignee.className = "badge"; assignee.textContent = task.assignee ? task.assignee : "Unassigned"; const id = document.createElement("span"); id.className = "badge"; id.textContent = `#${task.id}`; meta.append(priority, assignee); if (task.due_date) { const due = document.createElement("span"); const isOverdue = task.status !== "Done" && task.due_date < new Date().toISOString().slice(0, 10); due.className = `badge${isOverdue ? " overdue" : ""}`; due.textContent = `${isOverdue ? "Overdue" : "Due"}: ${task.due_date}`; meta.appendChild(due); } meta.appendChild(id); card.appendChild(meta); card.addEventListener("dragstart", handleDragStart); card.addEventListener("dragend", handleDragEnd); return card; }
+    function renderBoard(currentTasks) { const grouped = Object.fromEntries(STATUSES.map((status) => [status, []])); for (const task of currentTasks) if (grouped[task.status]) grouped[task.status].push(task); for (const status of STATUSES) { const list = document.querySelector(`[data-list-status="${status}"]`); list.textContent = ""; const sorted = sortTasks(grouped[status]); setColumnCount(status, sorted.length); if (sorted.length === 0) { const empty = document.createElement("div"); empty.className = "empty-column"; empty.textContent = `No ${STATUS_LABELS[status]} tasks yet.`; list.appendChild(empty); } else { for (const task of sorted) list.appendChild(buildTaskCard(task)); } } }
+    async function loadTasks() { showBanner("Loading tasks..."); try { const loadedTasks = await fetchTasks(); if (!Array.isArray(loadedTasks)) throw new Error("The server returned an invalid task list."); tasks = loadedTasks; renderBoard(tasks); if (tasks.length === 0) showBanner("No tasks yet. Use New Task to create the first card."); else showBanner(`${tasks.length} task${tasks.length === 1 ? "" : "s"} loaded.`, "success"); } catch (error) { tasks = []; renderBoard(tasks); showBanner(`Could not load tasks: ${error.message}`, "error", true); } }
+    function handleDragStart(event) { const card = event.currentTarget; card.classList.add("dragging"); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", card.dataset.taskId); event.dataTransfer.setData("application/status", card.dataset.status); }
+    function handleDragEnd(event) { event.currentTarget.classList.remove("dragging"); document.querySelectorAll(".column.drag-over").forEach((column) => column.classList.remove("drag-over")); }
+    async function handleDrop(event) { event.preventDefault(); const column = event.currentTarget.closest(".column"); column.classList.remove("drag-over"); const taskId = event.dataTransfer.getData("text/plain"); const previousStatus = event.dataTransfer.getData("application/status"); const targetStatus = column.dataset.status; if (!taskId || !targetStatus || previousStatus === targetStatus) return; const before = tasks.map((task) => ({ ...task })); const task = tasks.find((item) => String(item.id) === String(taskId)); if (!task) { showBanner("The dragged task could not be found. Refreshing the board.", "error"); await loadTasks(); return; } task.status = targetStatus; renderBoard(tasks); try { const updatedTask = await requestJson(`/tasks/${encodeURIComponent(taskId)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: targetStatus }) }, [200]); tasks = tasks.map((item) => String(item.id) === String(taskId) ? updatedTask : item); renderBoard(tasks); showBanner("Task moved.", "success"); } catch (error) { tasks = before; renderBoard(tasks); showBanner(`Move rejected: ${error.message}`, "error"); } }
+    function setupDropTargets() { document.querySelectorAll(".card-list").forEach((list) => { list.addEventListener("dragover", (event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; list.closest(".column").classList.add("drag-over"); }); list.addEventListener("dragleave", (event) => { if (!list.contains(event.relatedTarget)) list.closest(".column").classList.remove("drag-over"); }); list.addEventListener("drop", handleDrop); }); }
+    function openCreateModal() { currentMode = "create"; editingSnapshot = null; taskForm.reset(); taskIdInput.value = ""; statusInput.value = "ToDo"; priorityInput.value = "Medium"; deleteButton.style.display = "none"; modalTitle.textContent = "New Task"; clearFormError(); modalOverlay.classList.add("visible"); titleInput.focus(); }
+    function openEditModal(task) { currentMode = "edit"; editingSnapshot = { title: task.title || "", description: task.description || "", status: task.status || "ToDo", priority: task.priority || "Medium", assignee: task.assignee || null, due_date: task.due_date || null }; taskIdInput.value = task.id; titleInput.value = editingSnapshot.title; descriptionInput.value = editingSnapshot.description; statusInput.value = editingSnapshot.status; priorityInput.value = editingSnapshot.priority; assigneeInput.value = editingSnapshot.assignee || ""; dueDateInput.value = editingSnapshot.due_date || ""; deleteButton.style.display = "inline-flex"; modalTitle.textContent = "Edit Task"; clearFormError(); modalOverlay.classList.add("visible"); titleInput.focus(); }
+    function closeModal() { modalOverlay.classList.remove("visible"); clearFormError(); taskForm.reset(); editingSnapshot = null; }
+    function readFormValues() { return { title: titleInput.value.trim(), description: descriptionInput.value.trim(), status: statusInput.value, priority: priorityInput.value, assignee: assigneeInput.value.trim() || null, due_date: dueDateInput.value || null }; }
+    function buildPayload(values) { if (currentMode === "create" || !editingSnapshot) return values; return Object.fromEntries(Object.entries(values).filter(([field, value]) => value !== editingSnapshot[field])); }
+    async function handleSubmit(event) { event.preventDefault(); clearFormError(); const values = readFormValues(); if (!values.title) { showFormError("Title is required and cannot be blank."); titleInput.focus(); return; } const payload = buildPayload(values); const mode = currentMode; if (mode === "edit" && Object.keys(payload).length === 0) { closeModal(); showBanner("No changes to save."); return; } const saveButton = document.getElementById("saveButton"); saveButton.disabled = true; saveButton.textContent = "Saving..."; try { if (mode === "create") { const created = await requestJson("/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); tasks = [...tasks, created]; } else { const taskId = taskIdInput.value; const updated = await requestJson(`/tasks/${encodeURIComponent(taskId)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, [200]); tasks = tasks.map((task) => String(task.id) === String(taskId) ? updated : task); } renderBoard(tasks); closeModal(); showBanner(mode === "create" ? "Task created." : "Task updated.", "success"); } catch (error) { showFormError(error.message); } finally { saveButton.disabled = false; saveButton.textContent = "Save Task"; } }
+    async function handleDelete() { const taskId = taskIdInput.value; if (!taskId) return; deleteButton.disabled = true; try { await requestJson(`/tasks/${encodeURIComponent(taskId)}`, { method: "DELETE" }); tasks = tasks.filter((task) => String(task.id) !== String(taskId)); renderBoard(tasks); closeModal(); if (tasks.length === 0) showBanner("No tasks yet. Use New Task to create the first card."); else showBanner("Task deleted.", "success"); } catch (error) { showFormError(error.message); } finally { deleteButton.disabled = false; } }
+    let searchTimer; searchInput.addEventListener("input", () => { window.clearTimeout(searchTimer); searchTimer = window.setTimeout(loadTasks, 300); }); filterPriority.addEventListener("change", loadTasks); filterAssignee.addEventListener("change", loadTasks); filterOverdue.addEventListener("change", loadTasks); clearFiltersButton.addEventListener("click", () => { searchInput.value = ""; filterPriority.value = ""; filterAssignee.value = ""; filterOverdue.checked = false; loadTasks(); }); refreshButton.addEventListener("click", loadTasks); newTaskButton.addEventListener("click", openCreateModal); modalCloseButton.addEventListener("click", closeModal); cancelButton.addEventListener("click", closeModal); taskForm.addEventListener("submit", handleSubmit); deleteButton.addEventListener("click", handleDelete); modalOverlay.addEventListener("click", (event) => { if (event.target === modalOverlay) closeModal(); }); document.addEventListener("keydown", (event) => { if (event.key === "Escape" && modalOverlay.classList.contains("visible")) closeModal(); }); setupDropTargets(); loadTasks();
+  </script>
+</body>
+</html>
