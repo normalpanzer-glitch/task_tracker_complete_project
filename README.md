@@ -36,6 +36,16 @@ python -m http.server 5500 --directory frontend
 
 Open [http://localhost:5500](http://localhost:5500). CORS is configured for both `localhost:5500` and `127.0.0.1:5500`.
 
+## Run from VS Code
+
+Opening `frontend/index.html` directly with `file://` cannot start the FastAPI backend. Open the **repository folder** in VS Code instead. After creating the virtual environment and installing the requirements, use:
+
+1. **Terminal -> Run Task**
+2. Choose **Start Task Tracker**
+3. Open `http://localhost:5500` in a browser
+
+The task starts the backend and frontend in two VS Code integrated terminals. Use **Terminal -> Run Task -> Run backend tests** to execute the test suite. Stop the two task terminals when you are finished.
+
 ## Test
 
 ```powershell

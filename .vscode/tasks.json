@@ -1,0 +1,45 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start backend",
+      "type": "shell",
+      "command": "& \"${workspaceFolder}\\.venv\\Scripts\\python.exe\" -m uvicorn app.main:app --reload --port 8000",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "task-tracker-backend"
+      }
+    },
+    {
+      "label": "Start frontend",
+      "type": "shell",
+      "command": "& \"${workspaceFolder}\\.venv\\Scripts\\python.exe\" -m http.server 5500 --directory frontend",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "task-tracker-frontend"
+      }
+    },
+    {
+      "label": "Start Task Tracker",
+      "dependsOn": ["Start backend", "Start frontend"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run backend tests",
+      "type": "shell",
+      "command": "& \"${workspaceFolder}\\.venv\\Scripts\\python.exe\" -m pytest tests -v",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}
