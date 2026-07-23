@@ -3,8 +3,16 @@
   "tasks": [
     {
       "label": "Start backend",
-      "type": "shell",
-      "command": "& \"${workspaceFolder}\\.venv\\Scripts\\python.exe\" -m uvicorn app.main:app --reload --port 8000",
+      "type": "process",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--reload",
+        "--port",
+        "8000"
+      ],
       "isBackground": true,
       "problemMatcher": [],
       "presentation": {
@@ -15,8 +23,15 @@
     },
     {
       "label": "Start frontend",
-      "type": "shell",
-      "command": "& \"${workspaceFolder}\\.venv\\Scripts\\python.exe\" -m http.server 5500 --directory frontend",
+      "type": "process",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "http.server",
+        "5500",
+        "--directory",
+        "frontend"
+      ],
       "isBackground": true,
       "problemMatcher": [],
       "presentation": {
@@ -27,19 +42,24 @@
     },
     {
       "label": "Start Task Tracker",
-      "dependsOn": ["Start backend", "Start frontend"],
+      "dependsOn": [
+        "Start backend",
+        "Start frontend"
+      ],
       "dependsOrder": "parallel",
       "problemMatcher": []
     },
     {
       "label": "Run backend tests",
-      "type": "shell",
-      "command": "& \"${workspaceFolder}\\.venv\\Scripts\\python.exe\" -m pytest tests -v",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
+      "type": "process",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "pytest",
+        "tests",
+        "-v"
+      ],
+      "problemMatcher": []
     }
   ]
 }
