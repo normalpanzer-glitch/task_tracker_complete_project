@@ -84,6 +84,20 @@ def test_patch_rejects_blank_title(client: TestClient, created_task: dict) -> No
     assert response.status_code == 422
 
 
+def test_patch_rejects_null_title_without_changing_task(client: TestClient, created_task: dict) -> None:
+    response = client.patch(f"/tasks/{created_task['id']}", json={"title": None})
+    assert response.status_code == 422
+    assert "Title cannot be null" in response.json()["detail"][0]["msg"]
+    assert client.get(f"/tasks/{created_task['id']}").json()["title"] == created_task["title"]
+
+
+def test_patch_rejects_null_status_without_changing_task(client: TestClient, created_task: dict) -> None:
+    response = client.patch(f"/tasks/{created_task['id']}", json={"status": None})
+    assert response.status_code == 422
+    assert "Status cannot be null" in response.json()["detail"][0]["msg"]
+    assert client.get(f"/tasks/{created_task['id']}").json()["status"] == created_task["status"]
+
+
 def test_patch_missing_task_returns_404(client: TestClient) -> None:
     assert client.patch("/tasks/missing", json={"title": "Updated"}).status_code == 404
 

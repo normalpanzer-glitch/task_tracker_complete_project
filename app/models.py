@@ -52,16 +52,23 @@ class TaskUpdate(BaseModel):
     assignee: str | None = None
     due_date: date | None = None
 
-    @field_validator("title")
+    @field_validator("title", mode="before")
     @classmethod
     def validate_title(cls, value: str | None) -> str | None:
         if value is None:
-            return value
+            raise ValueError("Title cannot be null")
         value = value.strip()
         if not value:
             raise ValueError("Title cannot be blank")
         if len(value) > 200:
             raise ValueError("Title cannot exceed 200 characters")
+        return value
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def validate_status(cls, value: TaskStatus | None) -> TaskStatus | None:
+        if value is None:
+            raise ValueError("Status cannot be null")
         return value
 
     @field_validator("description", mode="before")
