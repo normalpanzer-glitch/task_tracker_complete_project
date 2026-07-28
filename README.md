@@ -53,3 +53,69 @@ python -m pytest tests -v
 ```
 
 Storage is intentionally in-memory for the course project, so tasks reset whenever the backend process restarts.
+
+## Final Project
+
+Branch reviewed: `final-project`
+
+### What this submission demonstrates
+
+- Existing Task Tracker app still runs inside the intended course scope.
+- CI runs the pytest suite on push and pull request.
+- Docker image builds a FastAPI runtime for `/health` and task API verification.
+- AI review, security review, and ownership evidence is in `docs/`.
+
+### How to run locally
+
+From the repository root:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Verify the API:
+
+```powershell
+Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing
+```
+
+Run the frontend in a second terminal:
+
+```powershell
+python -m http.server 5500 --directory frontend
+```
+
+Open `http://localhost:5500` and confirm the Kanban columns plus create/edit modal are visible.
+
+### How to run tests
+
+```powershell
+python -m pytest tests -v
+```
+
+### How to run with Docker
+
+```powershell
+docker build -t task-tracker-final .
+docker run --rm -p 8000:8000 task-tracker-final
+Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing
+```
+
+Expected health response:
+
+```json
+{"status":"ok"}
+```
+
+### Evidence files
+
+- `docs/release-evidence.md`
+- `docs/final-ai-review.md`
+- `docs/ai-playbook.md`
+
+### AI assistance summary
+
+AI helped draft and review the final-project release artifacts: CI, Docker, README, and evidence documents. I verified the work by running the pytest suite, starting the FastAPI app locally, checking `/health`, reviewing protected app/frontend files, and checking documentation claims against the actual repository. One AI suggestion I corrected was to avoid claiming Docker or GitHub Actions had already run locally, because this workspace does not have Docker available and is not currently a Git worktree.
