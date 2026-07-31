@@ -13,7 +13,7 @@
 ## CI Evidence
 
 - Workflow file: `.github/workflows/ci.yml`.
-- Latest confirmed green run: [CI run 30359799958](https://github.com/normalpanzer-glitch/task_tracker_complete_project/actions/runs/30359799958) completed successfully on `final-project`. Current branch runs are available from the [CI workflow page](https://github.com/normalpanzer-glitch/task_tracker_complete_project/actions/workflows/ci.yml?query=branch%3Afinal-project); confirm the newest run is green after the final push.
+- Latest confirmed green run: [CI run 30635361979](https://github.com/normalpanzer-glitch/task_tracker_complete_project/actions/runs/30635361979) completed successfully on `final-project`; both `Python tests` and `Docker smoke test` passed. Current branch runs are available from the [CI workflow page](https://github.com/normalpanzer-glitch/task_tracker_complete_project/actions/workflows/ci.yml?query=branch%3Afinal-project).
 - Test command used by CI: `python -m pytest tests -v`.
 - Docker smoke check used by CI: build `task-tracker-final`, start `task-tracker-final-check`, and require `http://127.0.0.1:8000/health` to succeed with `curl --fail`.
 - Shortcut check: no `continue-on-error`, no `|| true`, no `--exit-zero`, pytest is not skipped, Python version is pinned to `3.12`, and dependencies are installed from `requirements.txt`.
@@ -24,7 +24,7 @@
 - Run command: `docker run --rm -d --name task-tracker-final-check -p 8000:8000 task-tracker-final`.
 - `/health` check: `Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing`, expecting HTTP 200 and `{"status":"ok"}`.
 - Stop command: `docker stop task-tracker-final-check`; `--rm` removes the stopped container.
-- Local Docker note: Docker CLI 29.6.2 was installed and the commands were attempted, but Docker Desktop could not start because virtualization support was not detected. A successful local container run is therefore not claimed. The GitHub Actions Docker smoke test provides reproducible build/run/health verification on an Ubuntu runner; the newest workflow run must be green before submission.
+- Local Docker note: Docker CLI 29.6.2 was installed and the commands were attempted, but Docker Desktop could not start because virtualization support was not detected. A successful local container run is therefore not claimed. The linked green GitHub Actions run provides reproducible build/run/health verification on an Ubuntu runner.
 - Non-root check: `Dockerfile` creates `appuser` and runs the app with `USER appuser`.
 - No-baked-secrets check: `.dockerignore` excludes `.env`, `.env.*`, `.git/`, local virtual environments, caches, docs, tests, and frontend files. The `Dockerfile` copies only `requirements.txt` and `app/`.
 - Runtime command: `CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`.
@@ -36,5 +36,5 @@
 | `/health` returns `{"status":"ok"}` with HTTP 200. | `app/main.py`, `tests/test_tasks.py::test_health`, and local `Invoke-WebRequest` result. | Confirmed. | README final section includes the expected response. |
 | The full test suite runs with pytest. | `requirements.txt`, `tests/test_tasks.py`, and local `python -m pytest tests -v` output. | Confirmed: 32 passed. | README and CI use the same pytest command. |
 | CI installs dependencies and runs tests without hidden shortcuts. | `.github/workflows/ci.yml` review and the linked green Actions run. | Confirmed: setup-python 3.12, pip install, pytest. | Added workflow and recorded its public run. |
-| Docker builds, starts, and serves `/health` without copying secrets or running as root. | `.github/workflows/ci.yml`, `.dockerignore`, and `Dockerfile`. | CI is configured to fail unless the image builds and the container health request succeeds; confirm the newest run is green. Local Docker was blocked by unavailable virtualization. | Added a Docker smoke-test job, narrow build context, and non-root `appuser`. |
+| Docker builds, starts, and serves `/health` without copying secrets or running as root. | Green Docker smoke-test job in CI run 30635361979, `.dockerignore`, and `Dockerfile`. | Confirmed in CI: the image built, the container started, and `curl --fail` accepted `/health`. Local Docker was blocked by unavailable virtualization. | Added a Docker smoke-test job, narrow build context, and non-root `appuser`. |
 | The frontend still contains the Kanban board/create-edit flow. | `frontend/index.html` source review and local `http.server` HTTP 200 response. | Confirmed: To Do, In Progress, Done columns, New Task button, Edit modal, create/update/delete handlers. | No frontend changes made. |
