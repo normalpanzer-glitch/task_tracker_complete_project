@@ -20,7 +20,9 @@ Docker commands:
 
 ```powershell
 docker build -t task-tracker-final .
-docker run --rm -p 8000:8000 task-tracker-final
+docker run --rm -d --name task-tracker-final-check -p 8000:8000 task-tracker-final
+Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing
+docker stop task-tracker-final-check
 ```
 
 ## Project Rules

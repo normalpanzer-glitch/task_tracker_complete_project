@@ -24,3 +24,33 @@ jobs:
 
       - name: Run pytest
         run: python -m pytest tests -v
+
+  docker:
+    name: Docker smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t task-tracker-final .
+
+      - name: Start container and verify health
+        run: |
+          docker run -d --name task-tracker-final-check -p 8000:8000 task-tracker-final
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8000/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs task-tracker-final-check
+          exit 1
+
+      - name: Remove smoke-test container
+        if: always()
+        run: |
+          if docker ps -a --format '{{.Names}}' | grep -Fxq task-tracker-final-check; then
+            docker rm -f task-tracker-final-check
+          fi

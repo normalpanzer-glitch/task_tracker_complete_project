@@ -2,8 +2,8 @@
 
 ## Baseline
 
-- Branch: `final-project` target branch. This local Codex folder is not currently a Git worktree, so create/push the branch in the public repository before submission.
-- Date: 2026-07-28.
+- Branch: `final-project` in the public `normalpanzer-glitch/task_tracker_complete_project` repository. The local checkout tracks `origin/final-project`.
+- Date: 2026-07-31.
 - Local app run command: `python -m uvicorn app.main:app --host 127.0.0.1 --port 8000`.
 - `/health` result: `Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing` returned HTTP 200 with `{"status":"ok"}`.
 - Frontend check: `python -m http.server 5500 --directory frontend` served `http://127.0.0.1:5500` with HTTP 200. The response contained the Kanban title, `New Task`, `Edit Task`, and the To Do/In Progress/Done columns.
@@ -13,16 +13,18 @@
 ## CI Evidence
 
 - Workflow file: `.github/workflows/ci.yml`.
-- Latest run link or note: no GitHub Actions run link is available from this local non-git workspace yet. The workflow should run after pushing the `final-project` branch to the public GitHub repository.
+- Latest confirmed green run: [CI run 30359799958](https://github.com/normalpanzer-glitch/task_tracker_complete_project/actions/runs/30359799958) completed successfully on `final-project`. Current branch runs are available from the [CI workflow page](https://github.com/normalpanzer-glitch/task_tracker_complete_project/actions/workflows/ci.yml?query=branch%3Afinal-project); confirm the newest run is green after the final push.
 - Test command used by CI: `python -m pytest tests -v`.
-- Shortcut check: no `continue-on-error`, no `|| true`, pytest is not skipped, Python version is pinned to `3.12`, and dependencies are installed from `requirements.txt`.
+- Docker smoke check used by CI: build `task-tracker-final`, start `task-tracker-final-check`, and require `http://127.0.0.1:8000/health` to succeed with `curl --fail`.
+- Shortcut check: no `continue-on-error`, no `|| true`, no `--exit-zero`, pytest is not skipped, Python version is pinned to `3.12`, and dependencies are installed from `requirements.txt`.
 
 ## Docker Evidence
 
 - Build command: `docker build -t task-tracker-final .`.
-- Run command: `docker run --rm -p 8000:8000 task-tracker-final`.
+- Run command: `docker run --rm -d --name task-tracker-final-check -p 8000:8000 task-tracker-final`.
 - `/health` check: `Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing`, expecting HTTP 200 and `{"status":"ok"}`.
-- Local Docker note: Docker could not be run in this workspace because `docker` is not installed or not on PATH (`The term 'docker' is not recognized`). Run the commands above on a machine with Docker Desktop before final submission if possible.
+- Stop command: `docker stop task-tracker-final-check`; `--rm` removes the stopped container.
+- Local Docker note: Docker CLI 29.6.2 was installed and the commands were attempted, but Docker Desktop could not start because virtualization support was not detected. A successful local container run is therefore not claimed. The GitHub Actions Docker smoke test provides reproducible build/run/health verification on an Ubuntu runner; the newest workflow run must be green before submission.
 - Non-root check: `Dockerfile` creates `appuser` and runs the app with `USER appuser`.
 - No-baked-secrets check: `.dockerignore` excludes `.env`, `.env.*`, `.git/`, local virtual environments, caches, docs, tests, and frontend files. The `Dockerfile` copies only `requirements.txt` and `app/`.
 - Runtime command: `CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`.
@@ -33,6 +35,6 @@
 |---|---|---|---|
 | `/health` returns `{"status":"ok"}` with HTTP 200. | `app/main.py`, `tests/test_tasks.py::test_health`, and local `Invoke-WebRequest` result. | Confirmed. | README final section includes the expected response. |
 | The full test suite runs with pytest. | `requirements.txt`, `tests/test_tasks.py`, and local `python -m pytest tests -v` output. | Confirmed: 32 passed. | README and CI use the same pytest command. |
-| CI installs dependencies and runs tests without hidden shortcuts. | `.github/workflows/ci.yml` review. | Confirmed: setup-python 3.12, pip install, pytest. | Added workflow. |
-| Docker does not copy secrets and runs as non-root. | `.dockerignore` and `Dockerfile` review. | Confirmed by file review; local Docker runtime not available. | Added `.dockerignore` and non-root `appuser`. |
+| CI installs dependencies and runs tests without hidden shortcuts. | `.github/workflows/ci.yml` review and the linked green Actions run. | Confirmed: setup-python 3.12, pip install, pytest. | Added workflow and recorded its public run. |
+| Docker builds, starts, and serves `/health` without copying secrets or running as root. | `.github/workflows/ci.yml`, `.dockerignore`, and `Dockerfile`. | CI is configured to fail unless the image builds and the container health request succeeds; confirm the newest run is green. Local Docker was blocked by unavailable virtualization. | Added a Docker smoke-test job, narrow build context, and non-root `appuser`. |
 | The frontend still contains the Kanban board/create-edit flow. | `frontend/index.html` source review and local `http.server` HTTP 200 response. | Confirmed: To Do, In Progress, Done columns, New Task button, Edit modal, create/update/delete handlers. | No frontend changes made. |

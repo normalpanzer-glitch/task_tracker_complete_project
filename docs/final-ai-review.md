@@ -31,7 +31,7 @@ I manually checked that no `.env` file or secret values are required by the app,
 
 ## One AI Output I Rejected Or Corrected
 
-I corrected the release evidence so it does not claim Docker or GitHub Actions already passed in this local workspace. Docker is not installed here, and this folder is not currently a Git worktree, so the docs record local test and `/health` proof separately from the Docker/GitHub commands that must be run after pushing the public `final-project` branch.
+I corrected stale release evidence after confirming that the public `final-project` branch and a successful GitHub Actions run exist. I also refused to claim a successful local Docker run: Docker Desktop could not start because this laptop did not report virtualization support. Instead, the limitation is recorded explicitly and CI performs a Docker build/run/health smoke test that fails loudly if the container is not healthy.
 
 ## Three AI Usage Rules
 

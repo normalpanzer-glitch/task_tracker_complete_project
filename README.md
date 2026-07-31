@@ -61,8 +61,8 @@ Branch reviewed: `final-project`
 ### What this submission demonstrates
 
 - Existing Task Tracker app still runs inside the intended course scope.
-- CI runs the pytest suite on push and pull request.
-- Docker image builds a FastAPI runtime for `/health` and task API verification.
+- CI runs the pytest suite and a Docker smoke test on push and pull request.
+- The Docker smoke test builds the image, starts the container, and requires `/health` to return successfully.
 - AI review, security review, and ownership evidence is in `docs/`.
 
 ### How to run locally
@@ -100,8 +100,9 @@ python -m pytest tests -v
 
 ```powershell
 docker build -t task-tracker-final .
-docker run --rm -p 8000:8000 task-tracker-final
+docker run --rm -d --name task-tracker-final-check -p 8000:8000 task-tracker-final
 Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing
+docker stop task-tracker-final-check
 ```
 
 Expected health response:
@@ -118,4 +119,4 @@ Expected health response:
 
 ### AI assistance summary
 
-AI helped draft and review the final-project release artifacts: CI, Docker, README, and evidence documents. I verified the work by running the pytest suite, starting the FastAPI app locally, checking `/health`, reviewing protected app/frontend files, and checking documentation claims against the actual repository. One AI suggestion I corrected was to avoid claiming Docker or GitHub Actions had already run locally, because this workspace does not have Docker available and is not currently a Git worktree.
+AI helped draft and review the final-project release artifacts: CI, Docker, README, and evidence documents. I verified the work by running the pytest suite, starting the FastAPI app locally, checking `/health`, serving the frontend, reviewing protected app/frontend files, and checking the public branch and GitHub Actions result. I corrected the evidence instead of claiming a successful local Docker run: Docker Desktop could not start on this laptop because virtualization support was not detected, so the CI workflow performs the reproducible Docker build/run/health smoke test and the local limitation is recorded honestly.

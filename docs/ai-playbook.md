@@ -31,7 +31,7 @@
 
 ## What I Am Still Figuring Out
 
-- How much Docker evidence is enough when the local machine does not have Docker installed.
+- How teams should record local Docker blockers when CI can verify the same container but the laptop cannot provide virtualization.
 - How to balance concise docs with enough evidence for a teammate to maintain the project.
 - When a security warning is worth fixing immediately versus documenting as course-scope risk.
 
